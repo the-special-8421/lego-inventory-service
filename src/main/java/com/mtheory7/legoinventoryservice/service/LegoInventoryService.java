@@ -4,6 +4,7 @@ import com.mtheory7.legoinventoryservice.api.RebrickableApi;
 import com.mtheory7.legoinventoryservice.entities.RebrickableResultDTO;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.FileWriter;
@@ -15,6 +16,8 @@ import java.util.*;
 public class LegoInventoryService {
     // Services
     private final RebrickableApi rebrickableApi;
+    @Value("${REBRICKABLE_API_KEY:}")
+    private String rebrickableApiKey;
     // Setup
     private final List<String> FILE_HEADER = Arrays.asList("Set Number", "Name", "Year", "Theme ID", "Parts", "Image URL", "Set URL");
     private final String FILE_PATH = "src/main/resources/LegoInventory.csv";
@@ -27,10 +30,11 @@ public class LegoInventoryService {
     }
 
     public String refreshInventory() throws InterruptedException {
+        if (rebrickableApiKey == null || rebrickableApiKey.isEmpty()) return "Set environment variable REBRICKABLE_API_KEY to a valid Rebrickable API Key.";
         String response = "<a>Started job at " + LocalDateTime.now();
         for (String setNumber : SET_LIST_INSTRUCTIONS_BOX_USED) {
             Thread.sleep(1250);
-            RebrickableResultDTO rebrickableResponseDTO = rebrickableApi.findSetBySetNumber("9ef3a8fb5d4de4562b3f2f466edc0d14", setNumber + "-1");
+            RebrickableResultDTO rebrickableResponseDTO = rebrickableApi.findSetBySetNumber(rebrickableApiKey, setNumber + "-1");
             rebrickableResultsMap.put(setNumber + "-1", rebrickableResponseDTO);
         }
         return response + "<br>Finished at " + LocalDateTime.now() + "</a>" ;
