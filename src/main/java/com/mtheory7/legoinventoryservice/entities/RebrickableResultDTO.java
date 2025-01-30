@@ -13,4 +13,5 @@ public class RebrickableResultDTO {
     private Integer num_parts;
     private String set_img_url;
     private String set_url;
+    private String status;
 }

@@ -19,23 +19,30 @@ public class LegoInventoryService {
     @Value("${REBRICKABLE_API_KEY:}")
     private String rebrickableApiKey;
     // Setup
-    private final List<String> FILE_HEADER = Arrays.asList("Set Number", "Name", "Year", "Theme ID", "Parts", "Image URL", "Set URL");
+    private final List<String> FILE_HEADER = Arrays.asList("Set Number", "Name", "Year", "Theme ID", "Parts", "Status", "Image URL", "Set URL");
     private final String FILE_PATH = "src/main/resources/LegoInventory.csv";
     // Data
-    private final List<String> SET_LIST_INSTRUCTIONS_BOX_USED = Arrays.asList("75345","75317","76831","75271","60420","10355","10333","75395","7131","40640","30280","30584","75363","76263","76289","42165","76191","10497","75355","75279","6495154","40746","30620","30680","75295","76263","40721","31113","10369","21328","75389","75193","40743","30460","30670","76275","75368","40696","31113","10368","40649","60440","7110","30340","30570","60399","42147","40646","31113","42178","42179","10339","7111","70822","30663","75344","31134","40462","75388","75356","75379","7131","70823","30665","40642","75332","40463","31136","75383","40719","7121","70824","30685","42163","75332","31136","76278","40719","7106","30701","40468","42147","31136","75375","42161","6556842","30568","75391","31145","76915","10281","75398","30653","60458","31145","75360","40613","75394","30651","40644","31145","76424","75380","21336","71803","60458","60428","60404","75381","10341","30645","75373","60430","71426","10300","30652","31134","75385","40648","30654","40748","40585","75300","30677","31134","31164","75304","30682","76241","31164","75376","2045","40619","31164","42201","40357","40619","40220","40574","30701","40631","31088","21342","40631","31088","40715","31088","31134","40290","40712","40687","40517","76958","75317","75880","60392","75886","60318","76908","75370","75878","76307","76918","40547","75887","40547","75892","40728","76918","31159","75890","31159","10355","31159","31134","31134","40570","40524","40461","40650","40712","60404","71487");
+    private final List<String> SETS_USED = Arrays.asList("75345","75317","76831","75271","60420","10355","10333","75395","7131","40640","30280","30584","75363","76263","76289","42165","76191","10497","75355","75279","6495154","40746","30620","30680","75295","76263","40721","31113","10369","21328","75389","75193","40743","30460","30670","76275","75368","40696","31113","10368","40649","60440","7110","30340","30570","60399","42147","40646","31113","42178","42179","10339","7111","70822","30663","75344","31134","40462","75388","75356","75379","7131","70823","30665","40642","75332","40463","31136","75383","40719","7121","70824","30685","42163","75332","31136","76278","40719","7106","30701","40468","42147","31136","75375","42161","6556842","30568","75391","31145","76915","10281","75398","6594","30653","60458","31145","75360","40613","75394","30651","40644","31145","76424","75380","21336","71803","60458","60428","60404","75381","10341","30645","75373","60430","71426","10300","30652","31134","75385","40648","30654","40748","40585","75300","30677","31134","31164","75304","30682","76241","31164","75376","2045","40619","31164","42201","40357","40619","40220","40574","30701","40631","31088","21342","30710","40631","31088","40715","31088","31134","40290","40712","40687","40517","76958","75317","75880","60392","75886","60318","76908","75370","75878","76307","76918","40547","75887","40547","75892","40728","76918","31159","75890","31159","10355","31159","31134","31134","40570","40524","40461","40650","40712","60404","71487");
+    private final List<String> SETS_SEALED = Arrays.asList("912411","75375","6495154","30654","40630","40715","30390","76275","40644","30645","40669","70841","30685","40671","6386182","30640","42148","70823","30701","40460","40712","30682","31140","40693","40277","40641","5002812","30683","40641","40306","30688","40638","42163","30670","40639","5006085","30645","60376","5006746","30683","60400","31140","30670","76275","42163","30657","71487","40581","30701","71816","40726","30670","42197","40688","30688","40756","40687","30685","75369","40719","30677","40615","40574","30651","75378","60430","30663","31163","40649","30710","11037","40585","30680","40686","40689","30433","75333","40357","30652","70825","10355","30582","21326","30710","76908","911724","76907","952310","76934","122333","76425","912175","76307","911943","40688","5002045","40604","5002203","60438","5002948","60384","912310","60283","30701","31157","30701","76944","30280","76303","30280","76421","30528","40699","30340","40564","30460","76293","31161","70816","31212");
+    private final Set<String> UNIQUE_SETS = new HashSet<>();
+
     private final Map<String, RebrickableResultDTO> rebrickableResultsMap = new HashMap<>();
 
     public LegoInventoryService(RebrickableApi rebrickableApi) {
         this.rebrickableApi = rebrickableApi;
+        Collections.sort(SETS_USED);
+        Collections.sort(SETS_SEALED);
+        UNIQUE_SETS.addAll(SETS_USED);
+        UNIQUE_SETS.addAll(SETS_SEALED);
     }
 
     public String refreshInventory() throws InterruptedException {
         if (rebrickableApiKey == null || rebrickableApiKey.isEmpty()) return "Set environment variable REBRICKABLE_API_KEY to a valid Rebrickable API Key.";
         String response = "<a>Started job at " + LocalDateTime.now();
-        for (String setNumber : SET_LIST_INSTRUCTIONS_BOX_USED) {
-            Thread.sleep(1250);
-            RebrickableResultDTO rebrickableResponseDTO = rebrickableApi.findSetBySetNumber(rebrickableApiKey, setNumber + "-1");
-            rebrickableResultsMap.put(setNumber + "-1", rebrickableResponseDTO);
+        for (String setNumber : UNIQUE_SETS) {
+            Thread.sleep(1300);
+            RebrickableResultDTO rebrickableResponseDTO = rebrickableApi.findSetBySetNumber(rebrickableApiKey, setNumber+"-1");
+            rebrickableResultsMap.put(setNumber+"-1", rebrickableResponseDTO);
         }
         return response + "<br>Finished at " + LocalDateTime.now() + "</a>" ;
     }
@@ -65,7 +72,9 @@ public class LegoInventoryService {
             FileWriter fileWriter = new FileWriter(FILE_PATH);
             CSVPrinter csvPrinter = new CSVPrinter(fileWriter, CSVFormat.DEFAULT);
             csvPrinter.printRecord(FILE_HEADER);
-            for (List<String> row : generateData()) {
+            List<List<String>> data = generateData();
+            data.sort(Comparator.comparing(l -> l.get(0)));
+            for (List<String> row : data) {
                 csvPrinter.printRecord(row);
             }
             fileWriter.flush();
@@ -77,15 +86,43 @@ public class LegoInventoryService {
 
     private List<List<String>> generateData() {
         List<List<String>> data = new ArrayList<>();
-        for (Map.Entry<String, RebrickableResultDTO> entry : rebrickableResultsMap.entrySet()) {
+        List<String> setsToSkip = new ArrayList<>();
+        for (String setNumber : SETS_USED) {
+            if (setsToSkip.contains(setNumber)) continue;
             List<String> row = new ArrayList<>();
-            row.add(entry.getValue().getSet_num());
-            row.add(entry.getValue().getName());
-            row.add(entry.getValue().getYear());
-            row.add(entry.getValue().getTheme_id().toString());
-            row.add(entry.getValue().getNum_parts().toString());
-            row.add(entry.getValue().getSet_img_url());
-            row.add(entry.getValue().getSet_url());
+            String setNumberDashOne = setNumber+"-1";
+            if (rebrickableResultsMap.containsKey(setNumberDashOne)) {
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getSet_num());
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getName());
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getYear());
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getTheme_id().toString());
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getNum_parts().toString());
+                row.add("SETS_USED");
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getSet_img_url());
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getSet_url());
+            } else {
+                row.add(setNumberDashOne);
+                row.add("No information loaded yet");
+            }
+            setsToSkip.add(setNumber);
+            data.add(row);
+        }
+        for (String setNumber : SETS_SEALED) {
+            List<String> row = new ArrayList<>();
+            String setNumberDashOne = setNumber+"-1";
+            if (rebrickableResultsMap.containsKey(setNumberDashOne)) {
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getSet_num());
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getName());
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getYear());
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getTheme_id().toString());
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getNum_parts().toString());
+                row.add("SETS_SEALED");
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getSet_img_url());
+                row.add(rebrickableResultsMap.get(setNumberDashOne).getSet_url());
+            } else {
+                row.add(setNumberDashOne);
+                row.add("No information loaded yet");
+            }
             data.add(row);
         }
         return data;
