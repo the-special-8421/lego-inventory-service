@@ -1,8 +1,12 @@
 package com.mtheory7.legoinventoryservice.controller;
 
+import com.mtheory7.legoinventoryservice.entities.RebrickableResultDTO;
 import com.mtheory7.legoinventoryservice.service.LegoInventoryService;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 
 @RestController
@@ -26,6 +30,12 @@ public class LegoInventoryController {
     @GetMapping("/generateFile")
     public String generateFile() {
         return legoInventoryService.generateFile();
+    }
+
+    @CrossOrigin
+    @GetMapping("/getData")
+    public List<RebrickableResultDTO> getData() {
+        return legoInventoryService.getData();
     }
 }
 
